@@ -14,8 +14,7 @@
       "react-scripts": "5.0.1"
     },
     "scripts": {
-      "start": "react-scripts start",
-      "build": "react-scripts build",
+      "start": "REACT_APP_API_URL=http://192.168.0.197:3001/api WDS_SOCKET_HOST=192.168.0.197 WDS_SOCKET_PORT=3000 react-scripts start",      "build": "react-scripts build",
       "test": "react-scripts test",
       "eject": "react-scripts eject"
     },
