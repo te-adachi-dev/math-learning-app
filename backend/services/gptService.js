@@ -11,6 +11,9 @@ class GPTService {
     try {
       const difficulty = isAdvanced ? '応用問題' : '基本問題';
       
+      // デバッグ用にログを追加
+      console.log(`問題生成開始: ${unit.name}, 学年: ${grade}, 難易度: ${difficulty}`);
+      
       const prompt = `
 あなたは小学${grade}年生向けの算数教師です。
 以下の単元に関する${difficulty}を1つだけ作成してください。
@@ -18,41 +21,67 @@ class GPTService {
 単元名: ${unit.name}
 単元内容: ${unit.description}
 
-問題作成の条件:
-1. 小学${grade}年生の学習指導要領に準拠した内容であること
-2. 年齢に適した難易度と表現を使用すること
-3. 計算式や数値は明確で誤解を招かないこと
-4. 問題文は簡潔で、何を求めるのかが明確であること
-5. 単位の表記は一貫して正確であること（例：km, m, cm, kg, g など）
-6. 数値は教科書に準拠した表記方法を使用すること
+問題作成の絶対条件:
+1. 問題文には必ず計算に必要なすべての情報を明示すること
+2. 特に「何個のりんごを何グループに分ける」のような問題では、「8個のりんごを4グループに」のように総数と分ける数の両方を必ず明記すること
+3. 一意の答えが導き出せる問題であること
+4. 小学${grade}年生の学習指導要領に準拠した内容であること
+5. 単位の表記は一貫して正確であること
+6. 答えの形式（分数・小数・整数など）を指定する場合は、その指示を問題文に必ず含めること
 
 問題、正解、解説の3つをJSON形式で返してください。
-答えには必要に応じて単位を含めてください。また、小数点以下の桁数が重要な場合は何桁まで求めるかを問題文中に明記してください。
+答えには必ず単位を含めてください（該当する場合）。
 
+次の形式で返してください:
 {
-  "problem": "問題文をここに書いてください",
-  "answer": "正解を単位付きで記入してください",
-  "explanation": "解法の手順を段階的に説明してください"
+  "problem": "具体的な数値と必要な情報をすべて含む問題文",
+  "answer": "明確な答え（単位付き）",
+  "explanation": "解法の手順を段階的に説明"
 }`;
 
+      // レスポンス生成
       const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           { 
             role: 'system', 
-            content: '小学校の教科書に掲載されているような質の高い算数問題を作成します。問題は教育的で、明確で、子どもが理解しやすく、かつ学習効果の高いものを作成します。' 
+            content: '小学校の算数問題を作成する教師として、明確で具体的な問題を作成します。問題は必ず解答可能で、計算に必要な情報がすべて明示されています。曖昧さや複数の解釈が可能な問題は作成しません。各問題には、必要な情報がすべて含まれ、正確な答えが一つに定まります。' 
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.5, // 温度を下げて一貫性を高める
+        temperature: 0.3, // 創造性より一貫性を重視
       });
 
       const responseText = completion.choices[0].message.content;
+      
+      // デバッグ用にレスポンスをログ出力
+      console.log(`問題生成レスポンス: ${responseText}`);
+      
       try {
         // JSONの部分を抽出して解析
         const jsonMatch = responseText.match(/({[\s\S]*})/);
         if (jsonMatch) {
           const problemData = JSON.parse(jsonMatch[0]);
+          
+          // 問題の検証 - 明確さをチェック
+          const problemText = problemData.problem;
+          
+          // 問題が基本条件を満たしているか検証
+          const hasTotalAmount = 
+            /(\d+)個の/.test(problemText) || 
+            /合計(\d+)/.test(problemText) ||
+            /全部で(\d+)/.test(problemText);
+            
+          // 条件を満たさない場合は再生成を要求
+          if (!hasTotalAmount && 
+              (problemText.includes('分ける') || 
+               problemText.includes('分割') || 
+               problemText.includes('配る'))) {
+            console.log('問題が条件を満たしていません。再生成します。');
+            // 再帰的に問題を再生成
+            return this.generateProblem(unit, grade, isAdvanced);
+          }
+          
           return {
             problem: problemData.problem,
             answer: problemData.answer,
@@ -63,11 +92,11 @@ class GPTService {
         }
       } catch (jsonError) {
         console.error('JSON解析エラー:', jsonError);
-        // フォールバック: テキスト全体を返す
+        // フォールバック: 明確な問題を生成
         return {
-          problem: '問題を生成できませんでした。もう一度お試しください。',
-          answer: '',
-          explanation: responseText
+          problem: '8個のりんごを4つのグループに均等に分けます。1つのグループには何個のりんごが入りますか？',
+          answer: '2個',
+          explanation: '8個のりんごを4つのグループに均等に分けるので、8 ÷ 4 = 2 となります。したがって、1つのグループには2個のりんごが入ります。'
         };
       }
     } catch (error) {
@@ -79,6 +108,9 @@ class GPTService {
   // 回答の正誤判定
   static async evaluateAnswer(problem, userAnswer, correctAnswer, unit, grade) {
     try {
+      // デバッグ用にログを追加
+      console.log(`回答評価開始: 問題="${problem}", ユーザー回答="${userAnswer}", 正解="${correctAnswer}"`);
+      
       const prompt = `
 小学${grade}年生の算数の問題の回答を評価してください。
 
@@ -89,23 +121,17 @@ class GPTService {
 正解: ${correctAnswer}
 生徒の回答: ${userAnswer}
 
-評価基準:
-1. 数値の正確さ - 計算結果が正しいか
-2. 単位の正確さ - 適切な単位が付けられているか
-3. 表記の許容範囲 - 以下の場合は正解として扱う:
-   a. 同値の異なる表記（例：1.5億と1億5000万）
-   b. 末尾の0の有無（例：1.50と1.5）
-   c. 漢数字とアラビア数字の違い（例：三百と300）
-   d. 分数と小数の互換表記（例：1/4と0.25）
+評価の絶対条件:
+1. 問題文をよく読み、問題が具体的に何を求めているかを正確に理解してください
+2. 答えの数値だけでなく、単位や表記形式も含めて評価してください
+3. 生徒の回答が正解と数学的に等価であれば正解としてください（例：0.25と1/4、2個と2つなど）
+4. 評価は「正解か不正解か」の二択で判断し、部分点はありません
+5. もし問題文に不備（情報不足など）がある場合は、その旨を説明に含めてください
 
-回答が問題で指定された桁数や形式と一致しているかを特に確認してください。
-問題で「小数第2位まで求めなさい」のような指定がある場合は、その条件を満たしているかも評価してください。
-
-生徒の回答が正解かどうか判断し、なぜその判断になったかの説明をJSON形式で返してください。
-
+生徒の回答が正解かどうかを判断し、その理由をJSON形式で返してください:
 {
   "isCorrect": true または false,
-  "explanation": "判断理由と追加の解説"
+  "explanation": "判断理由を生徒が理解できる言葉で説明"
 }`;
   
       const completion = await openai.chat.completions.create({
@@ -113,19 +139,37 @@ class GPTService {
         messages: [
           { 
             role: 'system', 
-            content: '算数の教師として、明確な基準に基づいて生徒の回答を公平に評価します。数学的に正確で、かつ教育的な解説を提供します。' 
+            content: '算数教師として、公平で正確な採点を行います。問題の意図を正確に理解し、生徒の回答が数学的に正しいかどうかを評価します。生徒が混乱しないよう、わかりやすい言葉で説明します。問題自体に不備がある場合は、それを認識します。' 
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.2, // さらに温度を下げて判定の一貫性を高める
+        temperature: 0.2,
       });
 
       const responseText = completion.choices[0].message.content;
+      
+      // デバッグ用にレスポンスをログ出力
+      console.log(`回答評価レスポンス: ${responseText}`);
+      
       try {
         // JSONの部分を抽出して解析
         const jsonMatch = responseText.match(/({[\s\S]*})/);
         if (jsonMatch) {
           const evaluationData = JSON.parse(jsonMatch[0]);
+          
+          // 問題自体に不備があるかチェック
+          const explanation = evaluationData.explanation;
+          if (explanation.includes('問題に不備') || 
+              explanation.includes('情報が不足') ||
+              explanation.includes('明確でない')) {
+            // 問題に不備がある場合は特別なフラグを立てる
+            return {
+              isCorrect: false,
+              explanation: '申し訳ありません。この問題には必要な情報が不足しています。次の問題に進みましょう。',
+              problemInvalid: true
+            };
+          }
+          
           return {
             isCorrect: evaluationData.isCorrect,
             explanation: evaluationData.explanation
@@ -138,6 +182,20 @@ class GPTService {
         // フォールバック: テキスト全体を解析してフラグを推測
         const isCorrectGuess = responseText.toLowerCase().includes('correct') || 
                               responseText.toLowerCase().includes('正解');
+        
+        // 問題自体の不備をチェック
+        const hasProblemIssue = responseText.includes('問題に不備') || 
+                               responseText.includes('情報が不足') ||
+                               responseText.includes('明確でない');
+        
+        if (hasProblemIssue) {
+          return {
+            isCorrect: false,
+            explanation: '申し訳ありません。この問題には必要な情報が不足しています。次の問題に進みましょう。',
+            problemInvalid: true
+          };
+        }
+        
         return {
           isCorrect: isCorrectGuess,
           explanation: responseText
