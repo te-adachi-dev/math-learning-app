@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// WebSocketİ’è‚Ì‚½‚ß‚ÌƒOƒ[ƒoƒ‹•Ï”
-window.WDS_SOCKET_HOST = process.env.WDS_SOCKET_HOST || 'localhost';
+// WebSocketè¨­å®šã®ãŸã‚ã®ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
+window.WDS_SOCKET_HOST = process.env.WDS_SOCKET_HOST || '0.0.0.0';
 window.WDS_SOCKET_PORT = process.env.WDS_SOCKET_PORT || '3000';
 window.WDS_SOCKET_PATH = process.env.WDS_SOCKET_PATH || '/ws';
 

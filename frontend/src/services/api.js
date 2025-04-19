@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// ホストIPを環境変数から取得し、未設定なら0.0.0.0をデフォルトとする
+const HOST_IP = process.env.REACT_APP_HOST_IP || '0.0.0.0';
+const API_URL = process.env.REACT_APP_API_URL || `http://${HOST_IP}:3001/api`;
 
 console.log('API URL:', API_URL); // APIのURLをログ出力
 

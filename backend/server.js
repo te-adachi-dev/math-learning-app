@@ -10,6 +10,7 @@ const problemsRoutes = require('./routes/problems');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // ミドルウェア
 app.use(cors());
@@ -29,6 +30,6 @@ app.get('/', (req, res) => {
 });
 
 // サーバー起動
-app.listen(PORT, () => {
-  console.log(`サーバーが起動しました: http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`サーバーが起動しました: http://${HOST}:${PORT}`);
 });
