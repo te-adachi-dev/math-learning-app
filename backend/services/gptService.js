@@ -7,11 +7,13 @@ const openai = new OpenAI({
 
 class GPTService {
   // 単元情報からGPTに問題生成を依頼
-  static async generateProblem(unit, grade, isAdvanced = false) {
-    try {
-      const difficulty = isAdvanced ? '応用問題' : '基本問題';
-      
-      const prompt = `
+static async generateProblem(unit, grade, isAdvanced = false) {
+
+  try {
+
+    const difficulty = isAdvanced ? '応用問題' : '基本問題';
+    
+    const prompt = `
 あなたは小学${grade}年生向けの算数教師です。
 以下の単元に関する${difficulty}を1つだけ作成してください。
 
@@ -19,14 +21,17 @@ class GPTService {
 単元内容: ${unit.description}
 
 問題は小学${grade}年生が理解できる表現で、明確な解答が導けるものにしてください。
+数値や単位の変換（例：1億5000万 = 1.5億）は正確に行ってください。
 問題、正解、解説の3つをJSON形式で返してください。
+
+作成する問題とその解答は必ず数学的に正確であることを確認してください。
+特に数値の表記や単位変換には十分注意してください。
 
 {
   "problem": "問題文をここに書いてください",
   "answer": "正解をここに書いてください",
   "explanation": "詳しい解説をここに書いてください"
 }`;
-
       const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
@@ -69,9 +74,9 @@ class GPTService {
   }
 
   // 回答の正誤判定
-  static async evaluateAnswer(problem, userAnswer, correctAnswer, unit, grade) {
-    try {
-      const prompt = `
+static async evaluateAnswer(problem, userAnswer, correctAnswer, unit, grade) {
+  try {
+    const prompt = `
 小学${grade}年生の算数の問題の回答を評価してください。
 
 単元名: ${unit.name}
@@ -83,12 +88,17 @@ class GPTService {
 
 生徒の回答が正解かどうか判断し、なぜその判断になったかの説明をJSON形式で返してください。
 数値計算の場合は小数点以下の桁数や表記の違いは許容してください。
+同じ数値でも表記が異なる場合（例：1.5億と1億5000万）は正解として扱ってください。
+数学的に同値であれば、表記の違いは無視して正解と判断してください。
 
 {
   "isCorrect": true または false,
   "explanation": "判断理由と追加の解説"
 }`;
 
+    // 以下は同じ...
+
+  
       const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
