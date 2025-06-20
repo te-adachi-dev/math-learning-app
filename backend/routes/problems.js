@@ -49,6 +49,9 @@ router.get('/generate/:unitId', async (req, res) => {
 });
 
 // 問題の回答を評価
+// backend/routes/problems.js の evaluate部分を更新
+
+// 問題の回答を評価（SVG対応部分のみ抜粋）
 router.post('/evaluate',
   [
     body('userId').notEmpty().withMessage('ユーザーIDは必須です'),
@@ -59,16 +62,14 @@ router.post('/evaluate',
     body('isAdvanced').isBoolean().withMessage('難易度指定は必須です')
   ],
   async (req, res) => {
-    // バリデーションチェック
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
-      const { userId, unitId, problem, userAnswer, correctAnswer, isAdvanced } = req.body;
+      const { userId, unitId, problem, userAnswer, correctAnswer, isAdvanced, svgData } = req.body;
       
-      // 単元情報を取得
       const unit = await Unit.findById(unitId);
       if (!unit) {
         return res.status(404).json({ 
@@ -77,7 +78,6 @@ router.post('/evaluate',
         });
       }
       
-      // ユーザー情報を取得
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ 
@@ -86,7 +86,6 @@ router.post('/evaluate',
         });
       }
       
-      // GPTで回答を評価
       const evaluation = await GPTService.evaluateAnswer(
         problem, 
         userAnswer, 
@@ -95,7 +94,7 @@ router.post('/evaluate',
         user.grade
       );
       
-      // 回答履歴を保存
+      // SVGデータも含めて履歴を保存
       await Problem.saveHistory(
         userId,
         unitId,
@@ -103,10 +102,10 @@ router.post('/evaluate',
         userAnswer,
         correctAnswer,
         evaluation.explanation,
-        evaluation.isCorrect
+        evaluation.isCorrect,
+        svgData || null  // SVGデータを保存
       );
       
-      // 理解度を更新
       const comprehensionUpdate = await User.updateComprehensionLevel(
         userId,
         unitId,

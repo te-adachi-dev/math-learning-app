@@ -1,14 +1,15 @@
+// backend/models/Problem.js (完全置換)
 const { db } = require('./db');
 
 class Problem {
-  // 問題の回答履歴を保存
-  static saveHistory(userId, unitId, problem, answer, correctAnswer, explanation, isCorrect) {
+  // 問題の回答履歴を保存（SVG対応）
+  static saveHistory(userId, unitId, problem, answer, correctAnswer, explanation, isCorrect, svgData = null) {
     return new Promise((resolve, reject) => {
       db.run(`
         INSERT INTO problem_history 
-        (user_id, unit_id, problem, answer, correct_answer, explanation, is_correct) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [userId, unitId, problem, answer, correctAnswer, explanation, isCorrect ? 1 : 0], 
+        (user_id, unit_id, problem, answer, correct_answer, explanation, is_correct, svg_data) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [userId, unitId, problem, answer, correctAnswer, explanation, isCorrect ? 1 : 0, svgData], 
       function(err) {
         if (err) {
           reject(err);

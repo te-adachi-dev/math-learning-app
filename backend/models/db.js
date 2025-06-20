@@ -14,6 +14,20 @@ const dbPath = path.resolve(dataDir, 'math_app.db');
 console.log(`データベースパス: ${dbPath}`);
 const db = new sqlite3.Database(dbPath);
 
+// SVGカラム追加関数
+const addSvgColumn = () => {
+  db.run(`
+    ALTER TABLE problem_history 
+    ADD COLUMN svg_data TEXT
+  `, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+      console.log('SVGカラム追加エラー:', err.message);
+    } else {
+      console.log('SVGカラムが追加されました');
+    }
+  });
+};
+
 // データベースの初期化関数
 const initDb = () => {
   db.serialize(() => {
@@ -70,6 +84,9 @@ const initDb = () => {
         UNIQUE(user_id, unit_id)
       )
     `);
+
+    // SVGカラム追加（既存テーブルの場合）
+    addSvgColumn();
 
     // 単元データがなければ初期データをロード
     db.get("SELECT COUNT(*) as count FROM units", (err, row) => {

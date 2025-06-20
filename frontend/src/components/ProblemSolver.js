@@ -34,7 +34,6 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import ChatIcon from '@mui/icons-material/Chat';
 import { unitsAPI, problemsAPI } from '../services/api';
 
-// 難易度切り替え用のTransition
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
@@ -48,6 +47,7 @@ const ProblemSolver = ({ user }) => {
   const [unit, setUnit] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [evaluating, setEvaluating] = useState(false); // ②評価中フラグ追加
   const [error, setError] = useState('');
   const [problem, setProblem] = useState(null);
   const [answer, setAnswer] = useState('');
@@ -66,7 +66,8 @@ const ProblemSolver = ({ user }) => {
     fetchUnitData();
   }, [unitId]);
 
-  // 問題が解かれた後、自動的に次の問題を用意するタイマー
+  // ③自動進行タイマーを削除（コメントアウト）
+  /*
   useEffect(() => {
     let timer;
     if (submitted && result) {
@@ -80,17 +81,15 @@ const ProblemSolver = ({ user }) => {
     }
     return () => clearTimeout(timer);
   }, [submitted, result]);
+  */
 
-  // 単元情報を取得
   const fetchUnitData = async () => {
     setLoading(true);
     try {
-      // 単元情報を取得
       const unitResponse = await unitsAPI.getUnit(unitId);
       if (unitResponse.success) {
         setUnit(unitResponse.unit);
         
-        // 単元の理解度を取得
         const comprehensionResponse = await unitsAPI.getComprehensionLevels(user.id);
         if (comprehensionResponse.success) {
           const unitComprehension = comprehensionResponse.comprehensionLevels.find(
@@ -99,14 +98,12 @@ const ProblemSolver = ({ user }) => {
           if (unitComprehension) {
             setComprehensionLevel(unitComprehension.comprehension_level || 0);
             
-            // 理解度が60%以上なら応用問題モードを提案
             if (unitComprehension.comprehension_level >= 60) {
               setIsAdvanced(true);
             }
           }
         }
         
-        // 最初の問題を生成
         generateProblem();
       } else {
         setError(unitResponse.message || '単元情報の取得に失敗しました');
@@ -118,7 +115,6 @@ const ProblemSolver = ({ user }) => {
     }
   };
 
-  // 問題を生成
   const generateProblem = async () => {
     setGenerating(true);
     setSubmitted(false);
@@ -138,7 +134,6 @@ const ProblemSolver = ({ user }) => {
       setGenerating(false);
       setLoading(false);
       
-      // 問題が生成されたらinputにフォーカス
       setTimeout(() => {
         if (answerInputRef.current) {
           answerInputRef.current.focus();
@@ -147,13 +142,12 @@ const ProblemSolver = ({ user }) => {
     }
   };
 
-  // 新しい問題を出題
   const handleNewProblem = () => {
     setLevelUpDialog(false);
     generateProblem();
   };
 
-  // 回答を送信
+  // ②回答送信時の処理修正
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
     
@@ -161,7 +155,7 @@ const ProblemSolver = ({ user }) => {
       return;
     }
     
-    setSubmitted(true);
+    setEvaluating(true); // 評価開始フラグ
     
     try {
       const response = await problemsAPI.evaluateAnswer(
@@ -174,25 +168,30 @@ const ProblemSolver = ({ user }) => {
       );
       
       if (response.success) {
+        // ②評価完了後に一度に状態更新
         setResult(response.result);
         setComprehensionLevel(response.comprehensionLevel);
+        setSubmitted(true);
+        
+        // ③レベルアップ判定（自動進行なし）
+        if (response.comprehensionLevel >= 60 && response.comprehensionLevel < 100 && !isAdvanced) {
+          setTimeout(() => setLevelUpDialog(true), 1000);
+        }
       } else {
         setError(response.message || '回答の評価に失敗しました');
-        setSubmitted(false);
       }
     } catch (err) {
       setError(err.message || 'サーバーに接続できませんでした');
-      setSubmitted(false);
+    } finally {
+      setEvaluating(false); // 評価終了フラグ
     }
   };
 
-  // 難易度切り替え
   const handleDifficultyToggle = () => {
     setIsAdvanced(!isAdvanced);
     handleNewProblem();
   };
 
-  // チャットモード切り替え
   const handleChatToggle = () => {
     setChatMode(!chatMode);
     
@@ -205,7 +204,6 @@ const ProblemSolver = ({ user }) => {
     }
   };
 
-  // チャットメッセージ送信
   const handleSendChatMessage = async (e) => {
     e.preventDefault();
     
@@ -217,7 +215,6 @@ const ProblemSolver = ({ user }) => {
     setChatInput('');
     setSendingChat(true);
     
-    // 自分のメッセージをチャット履歴に追加
     setChatMessages(prev => [
       ...prev, 
       { sender: 'user', text: userMessage }
@@ -227,7 +224,6 @@ const ProblemSolver = ({ user }) => {
       const response = await problemsAPI.sendChatMessage(user.id, userMessage, unitId);
       
       if (response.success) {
-        // 先生のメッセージをチャット履歴に追加
         setChatMessages(prev => [
           ...prev, 
           { sender: 'assistant', text: response.response }
@@ -240,7 +236,6 @@ const ProblemSolver = ({ user }) => {
     } finally {
       setSendingChat(false);
       
-      // 入力欄にフォーカス
       setTimeout(() => {
         if (chatInputRef.current) {
           chatInputRef.current.focus();
@@ -362,6 +357,13 @@ const ProblemSolver = ({ user }) => {
                   {problem?.problem}
                 </Typography>
                 
+                {/* ①SVG図形表示 */}
+                {problem?.svg && (
+                  <Box sx={{ textAlign: 'center', my: 2 }}>
+                    <div dangerouslySetInnerHTML={{ __html: problem.svg }} />
+                  </Box>
+                )}
+                
                 <Chip 
                   label={isAdvanced ? "応用問題" : "基本問題"} 
                   color={isAdvanced ? "secondary" : "primary"}
@@ -392,7 +394,7 @@ const ProblemSolver = ({ user }) => {
                     variant="outlined"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
-                    disabled={submitted}
+                    disabled={evaluating} // ②評価中は無効化
                     inputRef={answerInputRef}
                     sx={{ mb: 2 }}
                     autoComplete="off"
@@ -403,9 +405,16 @@ const ProblemSolver = ({ user }) => {
                     variant="contained"
                     fullWidth
                     size="large"
-                    disabled={!answer.trim() || submitted}
+                    disabled={!answer.trim() || evaluating} // ②評価中は無効化
                   >
-                    答えを送信
+                    {evaluating ? (
+                      <>
+                        <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+                        評価中...
+                      </>
+                    ) : (
+                      '答えを送信'
+                    )}
                   </Button>
                 </form>
               ) : (
@@ -472,6 +481,7 @@ const ProblemSolver = ({ user }) => {
                       </Typography>
                     </Box>
                     
+                    {/* ③手動で次に進むボタン */}
                     <Button
                       variant="contained"
                       color="primary"
@@ -596,7 +606,6 @@ const ProblemSolver = ({ user }) => {
         </Box>
       </Box>
       
-      {/* レベルアップダイアログ */}
       <Dialog
         open={levelUpDialog}
         TransitionComponent={Transition}
