@@ -1,8 +1,8 @@
-// backend/models/Problem.js (完全置換)
+// backend/models/Problem.js
 const { db } = require('./db');
 
 class Problem {
-  // 問題の回答履歴を保存（SVG対応）
+  // åé¡ã®åç­å±¥æ­´ãä¿å­ï¼SVGå¯¾å¿ï¼
   static saveHistory(userId, unitId, problem, answer, correctAnswer, explanation, isCorrect, svgData = null) {
     return new Promise((resolve, reject) => {
       db.run(`
@@ -20,7 +20,7 @@ class Problem {
     });
   }
 
-  // ユーザーの単元ごとの問題履歴を取得
+  // ã¦ã¼ã¶ã¼ã®ååãã¨ã®åé¡å±¥æ­´ãåå¾
   static getHistoryByUnit(userId, unitId, limit = 10) {
     return new Promise((resolve, reject) => {
       db.all(`
@@ -38,7 +38,7 @@ class Problem {
     });
   }
 
-  // ユーザーの全問題履歴を取得
+  // ã¦ã¼ã¶ã¼ã®å¨åé¡å±¥æ­´ãåå¾
   static getAllHistory(userId, limit = 20) {
     return new Promise((resolve, reject) => {
       db.all(`
@@ -58,7 +58,7 @@ class Problem {
     });
   }
 
-  // 特定単元の正解率を取得
+  // ç¹å®ååã®æ­£è§£çãåå¾
   static getAccuracyRate(userId, unitId) {
     return new Promise((resolve, reject) => {
       db.get(`

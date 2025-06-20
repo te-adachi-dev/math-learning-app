@@ -147,7 +147,7 @@ const ProblemSolver = ({ user }) => {
     generateProblem();
   };
 
-  // ②回答送信時の処理修正
+  // ②回答送信時の処理修正（SVGデータ送信対応）
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
     
@@ -164,7 +164,8 @@ const ProblemSolver = ({ user }) => {
         problem.problem, 
         answer, 
         problem.answer,
-        isAdvanced
+        isAdvanced,
+        problem.svg || null  // SVGデータを送信
       );
       
       if (response.success) {

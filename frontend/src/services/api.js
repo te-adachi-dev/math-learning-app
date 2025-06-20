@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-// ホストIPを環境変数から取得し、未設定なら0.0.0.0をデフォルトとする
+// ãã¹ãIPãç°å¢å¤æ°ããåå¾ããæªè¨­å®ãªã0.0.0.0ãããã©ã«ãã¨ãã
 const HOST_IP = process.env.REACT_APP_HOST_IP || '0.0.0.0';
 const API_URL = process.env.REACT_APP_API_URL || `http://${HOST_IP}:3001/api`;
 
-console.log('API URL:', API_URL); // APIのURLをログ出力
+console.log('API URL:', API_URL); // APIã®URLãã­ã°åºå
 
 const api = axios.create({
   baseURL: API_URL,
@@ -13,222 +13,225 @@ const api = axios.create({
   },
 });
 
-// リクエスト時のインターセプター
+// ãªã¯ã¨ã¹ãæã®ã¤ã³ã¿ã¼ã»ãã¿ã¼
 api.interceptors.request.use(
   config => {
-    console.log(`APIリクエスト: ${config.method.toUpperCase()} ${config.url}`, config);
+    console.log(`APIãªã¯ã¨ã¹ã: ${config.method.toUpperCase()} ${config.url}`, config);
     return config;
   },
   error => {
-    console.error('APIリクエストエラー:', error);
+    console.error('APIãªã¯ã¨ã¹ãã¨ã©ã¼:', error);
     return Promise.reject(error);
   }
 );
 
-// レスポンス時のインターセプター
+// ã¬ã¹ãã³ã¹æã®ã¤ã³ã¿ã¼ã»ãã¿ã¼
 api.interceptors.response.use(
   response => {
-    console.log(`APIレスポンス: ${response.status} ${response.config.url}`, response.data);
+    console.log(`APIã¬ã¹ãã³ã¹: ${response.status} ${response.config.url}`, response.data);
     return response;
   },
   error => {
-    console.error('APIレスポンスエラー:', error);
+    console.error('APIã¬ã¹ãã³ã¹ã¨ã©ã¼:', error);
     if (error.response) {
-      console.error('レスポンスデータ:', error.response.data);
-      console.error('レスポンスステータス:', error.response.status);
-      console.error('レスポンスヘッダー:', error.response.headers);
+      console.error('ã¬ã¹ãã³ã¹ãã¼ã¿:', error.response.data);
+      console.error('ã¬ã¹ãã³ã¹ã¹ãã¼ã¿ã¹:', error.response.status);
+      console.error('ã¬ã¹ãã³ã¹ãããã¼:', error.response.headers);
     } else if (error.request) {
-      console.error('リクエストデータ:', error.request);
+      console.error('ãªã¯ã¨ã¹ããã¼ã¿:', error.request);
     } else {
-      console.error('エラーメッセージ:', error.message);
+      console.error('ã¨ã©ã¼ã¡ãã»ã¼ã¸:', error.message);
     }
     return Promise.reject(error);
   }
 );
 
-// 認証関連のAPI
+// èªè¨¼é¢é£ã®API
 export const authAPI = {
-  // ユーザー登録
+  // ã¦ã¼ã¶ã¼ç»é²
   register: async (birthYear, grade) => {
     try {
-      console.log('ユーザー登録リクエスト:', { birthYear, grade });
+      console.log('ã¦ã¼ã¶ã¼ç»é²ãªã¯ã¨ã¹ã:', { birthYear, grade });
       const response = await api.post('/auth/register', { birthYear, grade });
-      console.log('ユーザー登録成功:', response.data);
+      console.log('ã¦ã¼ã¶ã¼ç»é²æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ユーザー登録エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('ã¦ã¼ã¶ã¼ç»é²ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // ユーザー情報取得
+  // ã¦ã¼ã¶ã¼æå ±åå¾
   getUser: async (userId) => {
     try {
-      console.log('ユーザー情報取得リクエスト:', { userId });
+      console.log('ã¦ã¼ã¶ã¼æå ±åå¾ãªã¯ã¨ã¹ã:', { userId });
       const response = await api.get(`/auth/user/${userId}`);
-      console.log('ユーザー情報取得成功:', response.data);
+      console.log('ã¦ã¼ã¶ã¼æå ±åå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('ユーザー情報取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('ã¦ã¼ã¶ã¼æå ±åå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // 学年更新
+  // å­¦å¹´æ´æ°
   updateGrade: async (userId, grade) => {
     try {
-      console.log('学年更新リクエスト:', { userId, grade });
+      console.log('å­¦å¹´æ´æ°ãªã¯ã¨ã¹ã:', { userId, grade });
       const response = await api.put(`/auth/user/${userId}/grade`, { grade });
-      console.log('学年更新成功:', response.data);
+      console.log('å­¦å¹´æ´æ°æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('学年更新エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('å­¦å¹´æ´æ°ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   }
 };
 
-// 単元関連のAPI
+// ååé¢é£ã®API
 export const unitsAPI = {
-  // 全単元を取得
+  // å¨ååãåå¾
   getAll: async () => {
     try {
-      console.log('全単元取得リクエスト');
+      console.log('å¨åååå¾ãªã¯ã¨ã¹ã');
       const response = await api.get('/units');
-      console.log('全単元取得成功:', response.data);
+      console.log('å¨åååå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('全単元取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('å¨åååå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // 特定の単元を取得
+  // ç¹å®ã®ååãåå¾
   getUnit: async (unitId) => {
     try {
-      console.log('単元取得リクエスト:', { unitId });
+      console.log('åååå¾ãªã¯ã¨ã¹ã:', { unitId });
       const response = await api.get(`/units/${unitId}`);
-      console.log('単元取得成功:', response.data);
+      console.log('åååå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('単元取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('åååå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // 特定の学年の単元を取得
+  // ç¹å®ã®å­¦å¹´ã®ååãåå¾
   getByGrade: async (grade) => {
     try {
-      console.log('学年別単元取得リクエスト:', { grade });
+      console.log('å­¦å¹´å¥åååå¾ãªã¯ã¨ã¹ã:', { grade });
       const response = await api.get(`/units/grade/${grade}`);
-      console.log('学年別単元取得成功:', response.data);
+      console.log('å­¦å¹´å¥åååå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('学年別単元取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('å­¦å¹´å¥åååå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // ユーザーの全単元の理解度を取得
+  // ã¦ã¼ã¶ã¼ã®å¨ååã®çè§£åº¦ãåå¾
   getComprehensionLevels: async (userId) => {
     try {
-      console.log('理解度取得リクエスト:', { userId });
+      console.log('çè§£åº¦åå¾ãªã¯ã¨ã¹ã:', { userId });
       const response = await api.get(`/units/user/${userId}/comprehension`);
-      console.log('理解度取得成功:', response.data);
+      console.log('çè§£åº¦åå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('理解度取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('çè§£åº¦åå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // 単元の問題履歴を取得
+  // ååã®åé¡å±¥æ­´ãåå¾
   getUnitHistory: async (unitId, userId) => {
     try {
-      console.log('単元履歴取得リクエスト:', { unitId, userId });
+      console.log('ååå±¥æ­´åå¾ãªã¯ã¨ã¹ã:', { unitId, userId });
       const response = await api.get(`/units/${unitId}/history/${userId}`);
-      console.log('単元履歴取得成功:', response.data);
+      console.log('ååå±¥æ­´åå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('単元履歴取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('ååå±¥æ­´åå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   }
 };
 
-// 問題関連のAPI
+// åé¡é¢é£ã®API
 export const problemsAPI = {
-  // 問題を生成
+  // åé¡ãçæ
   generateProblem: async (unitId, userId, isAdvanced = false) => {
     try {
-      console.log('問題生成リクエスト:', { unitId, userId, isAdvanced });
+      console.log('åé¡çæãªã¯ã¨ã¹ã:', { unitId, userId, isAdvanced });
       const response = await api.get(`/problems/generate/${unitId}`, {
         params: { userId, advanced: isAdvanced }
       });
-      console.log('問題生成成功:', response.data);
+      console.log('åé¡çææå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('問題生成エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('åé¡çæã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // 回答を評価
-  evaluateAnswer: async (userId, unitId, problem, userAnswer, correctAnswer, isAdvanced) => {
+  // åç­ãè©ä¾¡ï¼SVGå¯¾å¿çï¼
+  evaluateAnswer: async (userId, unitId, problem, userAnswer, correctAnswer, isAdvanced, svgData = null) => {
     try {
-      console.log('回答評価リクエスト:', { userId, unitId, problem, userAnswer, isAdvanced });
+      console.log('åç­è©ä¾¡ãªã¯ã¨ã¹ã:', { userId, unitId, problem, userAnswer, isAdvanced, svgData: svgData ? 'ãã' : 'ãªã' });
       const response = await api.post('/problems/evaluate', {
         userId,
         unitId,
         problem,
         userAnswer,
         correctAnswer,
-        isAdvanced
+        isAdvanced,
+        svgData  // SVGãã¼ã¿ãå«ãã
       });
-      console.log('回答評価成功:', response.data);
+      console.log('åç­è©ä¾¡æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('回答評価エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('åç­è©ä¾¡ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // チャットメッセージに応答
+  // ãã£ããã¡ãã»ã¼ã¸ã«å¿ç­
   sendChatMessage: async (userId, message, unitId = null) => {
     try {
-      console.log('チャットメッセージ送信:', { userId, message, unitId });
+      console.log('ãã£ããã¡ãã»ã¼ã¸éä¿¡:', { userId, message, unitId });
       const response = await api.post('/problems/chat', {
         userId,
         message,
         unitId
       });
-      console.log('チャットレスポンス成功:', response.data);
+      console.log('ãã£ããã¬ã¹ãã³ã¹æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('チャットメッセージエラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('ãã£ããã¡ãã»ã¼ã¸ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   },
   
-  // 問題履歴を取得
+  // åé¡å±¥æ­´ãåå¾
   getHistory: async (userId, unitId = null, limit = 10) => {
     try {
-      console.log('履歴取得リクエスト:', { userId, unitId, limit });
+      console.log('å±¥æ­´åå¾ãªã¯ã¨ã¹ã:', { userId, unitId, limit });
       const params = { limit };
       if (unitId) params.unitId = unitId;
       
       const response = await api.get(`/problems/history/${userId}`, { params });
-      console.log('履歴取得成功:', response.data);
+      console.log('å±¥æ­´åå¾æå:', response.data);
       return response.data;
     } catch (error) {
-      console.error('履歴取得エラー:', error);
-      throw error.response?.data || { message: 'サーバーに接続できませんでした' };
+      console.error('å±¥æ­´åå¾ã¨ã©ã¼:', error);
+      throw error.response?.data || { message: 'ãµã¼ãã¼ã«æ¥ç¶ã§ãã¾ããã§ãã' };
     }
   }
 };
 
-export default {
+const apiService = {
   auth: authAPI,
   units: unitsAPI,
   problems: problemsAPI
 };
+
+export default apiService;

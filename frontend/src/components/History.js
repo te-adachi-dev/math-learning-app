@@ -267,6 +267,13 @@ const History = ({ user }) => {
                       {item.problem}
                     </Typography>
                     
+                    {/* SVG図形表示 */}
+                    {item.svg_data && (
+                      <Box sx={{ textAlign: 'center', my: 2 }}>
+                        <div dangerouslySetInnerHTML={{ __html: item.svg_data }} />
+                      </Box>
+                    )}
+                    
                     <Box sx={{ 
                       display: 'flex', 
                       alignItems: 'flex-start',

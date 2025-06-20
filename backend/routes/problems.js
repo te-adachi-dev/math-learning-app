@@ -7,32 +7,37 @@ const GPTService = require('../services/gptService');
 
 const router = express.Router();
 
-// 単元の問題を生成
+// ååã®åé¡ãçæ
 router.get('/generate/:unitId', async (req, res) => {
   try {
     const unitId = req.params.unitId;
     const userId = req.query.userId;
     const isAdvanced = req.query.advanced === 'true';
     
-    // 単元情報を取得
+    // ååæå ±ãåå¾
     const unit = await Unit.findById(unitId);
     if (!unit) {
       return res.status(404).json({ 
         success: false, 
-        message: '単元が見つかりません' 
+        message: 'ååãè¦ã¤ããã¾ãã' 
       });
     }
     
-    // ユーザー情報を取得
+    // ã¦ã¼ã¶ã¼æå ±ãåå¾
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ 
         success: false, 
-        message: 'ユーザーが見つかりません' 
+        message: 'ã¦ã¼ã¶ã¼ãè¦ã¤ããã¾ãã' 
       });
     }
     
-    // GPTで問題を生成
+    // å­¦å¹´ã¨ååã®æ´åæ§ãã§ãã¯
+    if (!GPTService.isUnitAppropriateForGrade(unit.name, user.grade)) {
+      console.warn(`è­¦å: ${unit.name}ã¯${user.grade}å¹´çã«ã¯ä¸é©åãªååã§ã`);
+    }
+    
+    // GPTã§åé¡ãçæ
     const problemData = await GPTService.generateProblem(unit, user.grade, isAdvanced);
     
     return res.json({ 
@@ -40,26 +45,23 @@ router.get('/generate/:unitId', async (req, res) => {
       problem: problemData 
     });
   } catch (error) {
-    console.error('問題生成エラー:', error);
+    console.error('åé¡çæã¨ã©ã¼:', error);
     return res.status(500).json({ 
       success: false, 
-      message: 'サーバーエラーが発生しました' 
+      message: 'ãµã¼ãã¼ã¨ã©ã¼ãçºçãã¾ãã' 
     });
   }
 });
 
-// 問題の回答を評価
-// backend/routes/problems.js の evaluate部分を更新
-
-// 問題の回答を評価（SVG対応部分のみ抜粋）
+// åé¡ã®åç­ãè©ä¾¡
 router.post('/evaluate',
   [
-    body('userId').notEmpty().withMessage('ユーザーIDは必須です'),
-    body('unitId').notEmpty().withMessage('単元IDは必須です'),
-    body('problem').notEmpty().withMessage('問題文は必須です'),
-    body('userAnswer').notEmpty().withMessage('回答は必須です'),
-    body('correctAnswer').notEmpty().withMessage('正解は必須です'),
-    body('isAdvanced').isBoolean().withMessage('難易度指定は必須です')
+    body('userId').notEmpty().withMessage('ã¦ã¼ã¶ã¼IDã¯å¿é ã§ã'),
+    body('unitId').notEmpty().withMessage('ååIDã¯å¿é ã§ã'),
+    body('problem').notEmpty().withMessage('åé¡æã¯å¿é ã§ã'),
+    body('userAnswer').notEmpty().withMessage('åç­ã¯å¿é ã§ã'),
+    body('correctAnswer').notEmpty().withMessage('æ­£è§£ã¯å¿é ã§ã'),
+    body('isAdvanced').isBoolean().withMessage('é£æåº¦æå®ã¯å¿é ã§ã')
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -74,7 +76,7 @@ router.post('/evaluate',
       if (!unit) {
         return res.status(404).json({ 
           success: false, 
-          message: '単元が見つかりません' 
+          message: 'ååãè¦ã¤ããã¾ãã' 
         });
       }
       
@@ -82,7 +84,7 @@ router.post('/evaluate',
       if (!user) {
         return res.status(404).json({ 
           success: false, 
-          message: 'ユーザーが見つかりません' 
+          message: 'ã¦ã¼ã¶ã¼ãè¦ã¤ããã¾ãã' 
         });
       }
       
@@ -94,7 +96,7 @@ router.post('/evaluate',
         user.grade
       );
       
-      // SVGデータも含めて履歴を保存
+      // SVGãã¼ã¿ãå«ãã¦å±¥æ­´ãä¿å­ï¼svgDataãundefinedã®å ´åã¯nullï¼
       await Problem.saveHistory(
         userId,
         unitId,
@@ -103,7 +105,7 @@ router.post('/evaluate',
         correctAnswer,
         evaluation.explanation,
         evaluation.isCorrect,
-        svgData || null  // SVGデータを保存
+        svgData || null  // SVGãã¼ã¿ãä¿å­ï¼ãªããã°nullï¼
       );
       
       const comprehensionUpdate = await User.updateComprehensionLevel(
@@ -119,23 +121,23 @@ router.post('/evaluate',
         comprehensionLevel: comprehensionUpdate.level
       });
     } catch (error) {
-      console.error('回答評価エラー:', error);
+      console.error('åç­è©ä¾¡ã¨ã©ã¼:', error);
       return res.status(500).json({ 
         success: false, 
-        message: 'サーバーエラーが発生しました' 
+        message: 'ãµã¼ãã¼ã¨ã©ã¼ãçºçãã¾ãã' 
       });
     }
   }
 );
 
-// チャットメッセージに応答
+// ãã£ããã¡ãã»ã¼ã¸ã«å¿ç­
 router.post('/chat',
   [
-    body('userId').notEmpty().withMessage('ユーザーIDは必須です'),
-    body('message').notEmpty().withMessage('メッセージは必須です')
+    body('userId').notEmpty().withMessage('ã¦ã¼ã¶ã¼IDã¯å¿é ã§ã'),
+    body('message').notEmpty().withMessage('ã¡ãã»ã¼ã¸ã¯å¿é ã§ã')
   ],
   async (req, res) => {
-    // バリデーションチェック
+    // ããªãã¼ã·ã§ã³ãã§ãã¯
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -144,22 +146,22 @@ router.post('/chat',
     try {
       const { userId, message, unitId } = req.body;
       
-      // ユーザー情報を取得
+      // ã¦ã¼ã¶ã¼æå ±ãåå¾
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ 
           success: false, 
-          message: 'ユーザーが見つかりません' 
+          message: 'ã¦ã¼ã¶ã¼ãè¦ã¤ããã¾ãã' 
         });
       }
       
-      // 単元情報を取得（指定されている場合）
+      // ååæå ±ãåå¾ï¼æå®ããã¦ããå ´åï¼
       let unit = null;
       if (unitId) {
         unit = await Unit.findById(unitId);
       }
       
-      // GPTでチャット応答を生成
+      // GPTã§ãã£ããå¿ç­ãçæ
       const response = await GPTService.generateChatResponse(message, user, unit);
       
       return res.json({ 
@@ -167,16 +169,16 @@ router.post('/chat',
         response 
       });
     } catch (error) {
-      console.error('チャット応答エラー:', error);
+      console.error('ãã£ããå¿ç­ã¨ã©ã¼:', error);
       return res.status(500).json({ 
         success: false, 
-        message: 'サーバーエラーが発生しました' 
+        message: 'ãµã¼ãã¼ã¨ã©ã¼ãçºçãã¾ãã' 
       });
     }
   }
 );
 
-// 問題履歴を取得
+// åé¡å±¥æ­´ãåå¾
 router.get('/history/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -187,23 +189,23 @@ router.get('/history/:userId', async (req, res) => {
     if (!user) {
       return res.status(404).json({ 
         success: false, 
-        message: 'ユーザーが見つかりません' 
+        message: 'ã¦ã¼ã¶ã¼ãè¦ã¤ããã¾ãã' 
       });
     }
     
     let history;
     if (unitId) {
-      // 特定単元の履歴
+      // ç¹å®ååã®å±¥æ­´
       const unit = await Unit.findById(unitId);
       if (!unit) {
         return res.status(404).json({ 
           success: false, 
-          message: '単元が見つかりません' 
+          message: 'ååãè¦ã¤ããã¾ãã' 
         });
       }
       history = await Problem.getHistoryByUnit(userId, unitId, limit);
     } else {
-      // 全単元の履歴
+      // å¨ååã®å±¥æ­´
       history = await Problem.getAllHistory(userId, limit);
     }
     
@@ -212,10 +214,10 @@ router.get('/history/:userId', async (req, res) => {
       history 
     });
   } catch (error) {
-    console.error('履歴取得エラー:', error);
+    console.error('å±¥æ­´åå¾ã¨ã©ã¼:', error);
     return res.status(500).json({ 
       success: false, 
-      message: 'サーバーエラーが発生しました' 
+      message: 'ãµã¼ãã¼ã¨ã©ã¼ãçºçãã¾ãã' 
     });
   }
 });
